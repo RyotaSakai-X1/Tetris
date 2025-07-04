@@ -1,3 +1,72 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* カスタムCSS変数 */
+:root {
+  --color-tetris-cyan: #00ffff;
+  --color-tetris-blue: #0000ff;
+  --color-tetris-orange: #ff8c00;
+  --color-tetris-yellow: #ffff00;
+  --color-tetris-green: #00ff00;
+  --color-tetris-purple: #800080;
+  --color-tetris-red: #ff0000;
+
+  --width-tetris-board: 200px;
+  --height-tetris-board: 400px;
+}
+
+/* ベーススタイル */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ゲーム用カスタムスタイル */
+.tetris-block {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.game-container {
+  background: linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #1e1b4b 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* スムーズなトランジション */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* グロー効果 */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+.glow-pink {
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+}
+
+/* アニメーション */
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}

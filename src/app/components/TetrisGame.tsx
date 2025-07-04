@@ -10,6 +10,12 @@ type Tetromino = {
   y: number;
 };
 
+// テトリミノタイプ（位置情報なし）
+type TetrominoType = {
+  shape: number[][];
+  color: string;
+};
+
 // ゲームボードの定数
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
@@ -110,19 +116,27 @@ const TetrisGame = () => {
   const [currentTetromino, setCurrentTetromino] = useState<Tetromino | null>(
     null
   );
-  const [nextTetromino, setNextTetromino] = useState<Tetromino | null>(null);
+  const [nextTetromino, setNextTetromino] = useState<TetrominoType | null>(
+    null
+  );
 
-  // ランダムなテトリミノを生成する関数
-  const generateRandomTetromino = useCallback(() => {
+  // ランダムなテトリミノタイプを生成する関数（位置情報なし）
+  const generateRandomTetrominoType = useCallback(() => {
     const tetrominoNames = Object.keys(TETROMINOS);
     const randomName =
       tetrominoNames[Math.floor(Math.random() * tetrominoNames.length)];
+    return TETROMINOS[randomName as keyof typeof TETROMINOS];
+  }, []);
+
+  // ランダムなテトリミノを生成する関数（位置情報あり）
+  const generateRandomTetromino = useCallback(() => {
+    const tetrominoType = generateRandomTetrominoType();
     return {
-      ...TETROMINOS[randomName as keyof typeof TETROMINOS],
+      ...tetrominoType,
       x: Math.floor(BOARD_WIDTH / 2) - 2,
       y: 0,
     };
-  }, []);
+  }, [generateRandomTetrominoType]);
 
   // テトリミノが有効な位置にあるか判定する関数
   const isValidMove = useCallback(
@@ -193,14 +207,14 @@ const TetrisGame = () => {
         x: Math.floor(BOARD_WIDTH / 2) - 2,
         y: 0,
       });
-      setNextTetromino(generateRandomTetromino());
+      setNextTetromino(generateRandomTetrominoType());
     }
   }, [
     gameState.paused,
     gameState.gameOver,
     currentTetromino,
     nextTetromino,
-    generateRandomTetromino,
+    generateRandomTetrominoType,
   ]);
 
   // ゲームリセット関数
@@ -222,8 +236,8 @@ const TetrisGame = () => {
     boardRef.current = newBoard;
 
     setCurrentTetromino(null);
-    setNextTetromino(generateRandomTetromino());
-  }, [gameState.highScore, generateRandomTetromino]);
+    setNextTetromino(generateRandomTetrominoType());
+  }, [gameState.highScore, generateRandomTetrominoType]);
 
   // キーボードイベントを処理する関数
   const handleKeyPress = useCallback(
@@ -393,7 +407,7 @@ const TetrisGame = () => {
           });
 
           // 次のテトリミノをセット
-          setNextTetromino((nextTet: Tetromino | null) => {
+          setNextTetromino((nextTet: TetrominoType | null) => {
             if (nextTet) {
               const newTetromino: Tetromino = {
                 ...nextTet,
@@ -430,7 +444,7 @@ const TetrisGame = () => {
                 setCurrentTetromino(newTetromino);
               }, 0);
 
-              return generateRandomTetromino();
+              return generateRandomTetrominoType();
             }
             return nextTet;
           });
@@ -440,7 +454,7 @@ const TetrisGame = () => {
         }
       });
     }, dropInterval);
-  }, [gameState.level, isValidMove, generateRandomTetromino]);
+  }, [gameState.level, isValidMove, generateRandomTetrominoType]);
 
   // 初期化（一度だけ実行）
   useEffect(() => {
@@ -453,7 +467,7 @@ const TetrisGame = () => {
     }
 
     // 初期はnextTetrominoのみをセット（currentTetrominoはスタート時に設定）
-    setNextTetromino(generateRandomTetromino());
+    setNextTetromino(generateRandomTetrominoType());
 
     return () => {
       if (gameLoopRef.current) {
@@ -492,7 +506,7 @@ const TetrisGame = () => {
 
     const drawTetromino = (
       ctx: CanvasRenderingContext2D,
-      tetromino: Tetromino | null,
+      tetromino: Tetromino | TetrominoType | null,
       offsetX: number,
       offsetY: number
     ) => {
@@ -532,7 +546,19 @@ const TetrisGame = () => {
     nextCtx.clearRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
     nextCtx.fillStyle = "#000";
     nextCtx.fillRect(0, 0, nextPieceCanvas.width, nextPieceCanvas.height);
-    drawTetromino(nextCtx, nextTetromino, 0, 0);
+
+    // Next Pieceを中央に配置して描画
+    if (nextTetromino) {
+      const canvasWidth = nextPieceCanvas.width / BLOCK_SIZE;
+      const canvasHeight = nextPieceCanvas.height / BLOCK_SIZE;
+      const shapeWidth = nextTetromino.shape[0].length;
+      const shapeHeight = nextTetromino.shape.length;
+
+      const offsetX = Math.floor((canvasWidth - shapeWidth) / 2);
+      const offsetY = Math.floor((canvasHeight - shapeHeight) / 2);
+
+      drawTetromino(nextCtx, nextTetromino, offsetX, offsetY);
+    }
   }, [board, currentTetromino, nextTetromino, gameState.gameOver]);
 
   // ゲームループの再開/停止
@@ -568,11 +594,11 @@ const TetrisGame = () => {
 
   return (
     <div className="min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-      <div className="flex items-center justify-evenly gap-2">
+      <div className="flex items-center justify-evenly gap-2 w-md">
         {/* Game Over Modal */}
         {gameState.gameOver && (
-          <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-2xl text-center border border-purple-400 shadow-2xl shadow-purple-500/30">
+          <div className="fixed flex items-center justify-center z-50 bg-white">
+            <div className="p-8 rounded-2xl text-center border-2 border-purple-400 shadow-2xl shadow-purple-500/50">
               <h2 className="text-5xl font-bold text-red-400 mb-6 drop-shadow-lg tracking-wider">
                 GAME OVER
               </h2>
